@@ -1,16 +1,7 @@
 from fastapi import FastAPI
 
-from app.db.database import Base, engine
-from app.models.user import User
+from app.routes.auth_routes import router as auth_router
 
-Base.metadata.create_all(bind=engine)
+app = FastAPI()
 
-app = FastAPI(
-    title="Expense Splitter API",
-    version="1.0.0"
-)
-
-
-@app.get("/")
-def root():
-    return {"message": "Expense Splitter API Running"}
+app.include_router(auth_router)
