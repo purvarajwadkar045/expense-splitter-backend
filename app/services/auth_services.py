@@ -5,15 +5,11 @@ from app.schemas.user import UserCreate
 from app.core.security import hash_password
 
 
-def register_user(
-    db: Session,
-    user: UserCreate
-):
-    existing_user = (
-        db.query(User)
-        .filter(User.email == user.email)
-        .first()
-    )
+def register_user(user: UserCreate, db: Session):
+
+    existing_user = db.query(User).filter(
+        User.email == user.email
+    ).first()
 
     if existing_user:
         return None
@@ -21,9 +17,7 @@ def register_user(
     new_user = User(
         username=user.username,
         email=user.email,
-        password_hash=hash_password(
-            user.password
-        )
+        password_hash=hash_password(user.password)
     )
 
     db.add(new_user)
