@@ -6,7 +6,7 @@ class UserCreate(BaseModel):
     email:EmailStr
     password:str
 
-class UserLoin(BaseModel):
+class UserLogin(BaseModel):
     email:EmailStr
     password:str
 
@@ -18,11 +18,10 @@ class UserResponse(BaseModel):
 
     class Config:
         from_attributes=True       
-'''
+
 class TokenResponse(BaseModel):
     access_token: str
     token_type: str
 
 class MessageResponse(BaseModel):
     message: str
-'''
