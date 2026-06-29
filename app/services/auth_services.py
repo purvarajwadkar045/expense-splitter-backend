@@ -42,8 +42,11 @@ def login_user(login_data: UserLogin, db: Session):
             detail="Incorrect password"
         )
 
-    access_token = create_access_token(data={"sub": user.email})
-
+    access_token = create_access_token(
+    {
+        "sub": user.email
+    }
+)
     return {
         "access_token": access_token,
         "token_type": "bearer"
