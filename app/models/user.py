@@ -1,4 +1,5 @@
 from sqlalchemy import Column
+from sqlalchemy.orm import relationship
 from sqlalchemy import Integer
 from sqlalchemy import String
 from sqlalchemy import DateTime
@@ -36,4 +37,14 @@ class User(Base):
     created_at = Column(
         DateTime,
         default=datetime.utcnow
+    )
+    created_groups = relationship(
+    "Group",
+    back_populates="creator"
+    )
+
+    group_memberships = relationship(
+    "GroupMember",
+    back_populates="user",
+    cascade="all, delete-orphan"
     )

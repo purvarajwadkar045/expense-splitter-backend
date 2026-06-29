@@ -2,7 +2,9 @@ from fastapi import FastAPI
 from app.routes import auth_routes
 from app.routes import user_routes
 from app.db.database import Base, engine
-
+from app.models.user import User
+from app.models.group import Group
+from app.models.group_member import GroupMember
 # Import models
 from app.models.user import User
 
