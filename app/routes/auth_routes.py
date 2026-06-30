@@ -40,3 +40,17 @@ def login(
     db: Session = Depends(get_db)
 ):
     return login_user(login_data, db)
+
+@router.post("/{group_id}/members")
+def add_member(
+    group_id: int,
+    member: AddMember,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    return group_service.add_member(
+        group_id,
+        member.email,
+        current_user,
+        db
+    )

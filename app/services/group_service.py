@@ -1,0 +1,60 @@
+from fastapi import HTTPException
+
+from app.models.user import User
+from app.models.group import Group
+from app.models.group_member import GroupMember
+
+
+def add_member(
+    group_id,
+    email,
+    current_user,
+    db
+):
+
+    group = db.query(Group).filter(
+        Group.id == group_id
+    ).first()
+
+    if not group:
+        raise HTTPException(
+            status_code=404,
+            detail="Group not found"
+        )
+
+    if group.created_by != current_user.id:
+        raise HTTPException(
+            status_code=403,
+            detail="Only creator can add members"
+        )
+
+    user = db.query(User).filter(
+        User.email == email
+    ).first()
+
+    if not user:
+        raise HTTPException(
+            status_code=404,
+            detail="User not found"
+        )
+
+    existing = db.query(GroupMember).filter(
+        GroupMember.group_id == group.id,
+        GroupMember.user_id == user.id
+    ).first()
+
+    if existing:
+        raise HTTPException(
+            status_code=400,
+            detail="User already in group"
+        )
+
+    member = GroupMember(
+        group_id=group.id,
+        user_id=user.id
+    )
+
+    db.add(member)
+    db.commit()
+
+    return {"message": "Member added"}

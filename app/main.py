@@ -5,6 +5,7 @@ from app.db.database import Base, engine
 from app.models.user import User
 from app.models.group import Group
 from app.models.group_member import GroupMember
+from app.routes import group_routes
 # Import models
 from app.models.user import User
 
@@ -17,3 +18,4 @@ app = FastAPI()
 app.include_router(auth_router)
 app.include_router(auth_routes.router)
 app.include_router(user_routes.router)
+app.include_router(group_routes.router)
