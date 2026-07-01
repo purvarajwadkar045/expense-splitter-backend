@@ -4,6 +4,28 @@ from app.models.user import User
 from app.models.group import Group
 from app.models.group_member import GroupMember
 
+def create_group(group_data, current_user, db):
+    group = Group(
+        name=group_data.name,
+        description=group_data.description,
+        created_by=current_user.id
+    )
+    db.add(group)
+    db.commit()
+    db.refresh(group)
+    
+    # Automatically add creator as a member of the group
+    member = GroupMember(
+        group_id=group.id,
+        user_id=current_user.id,
+        is_admin=True
+    )
+    db.add(member)
+    db.commit()
+    db.refresh(group)
+    
+    return group
+
 
 def add_member(
     group_id,

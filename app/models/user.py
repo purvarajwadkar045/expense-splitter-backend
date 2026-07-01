@@ -48,3 +48,7 @@ class User(Base):
     back_populates="user",
     cascade="all, delete-orphan"
     )
+    expenses_paid = relationship(
+        "Expense",
+        back_populates="payer"
+    )

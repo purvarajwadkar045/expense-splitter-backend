@@ -5,7 +5,9 @@ from app.db.database import Base, engine
 from app.models.user import User
 from app.models.group import Group
 from app.models.group_member import GroupMember
+from app.models.expense import Expense
 from app.routes import group_routes
+from app.routes import expense_routes
 # Import models
 from app.models.user import User
 
@@ -19,3 +21,4 @@ app.include_router(auth_router)
 app.include_router(auth_routes.router)
 app.include_router(user_routes.router)
 app.include_router(group_routes.router)
+app.include_router(expense_routes.router)
