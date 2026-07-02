@@ -9,6 +9,7 @@ from app.models.expense import Expense
 from app.routes import group_routes
 from app.routes import expense_routes
 # Import models
+from app.models.expense_split import ExpenseSplit
 from app.models.user import User
 
 from app.routes.auth_routes import router as auth_router

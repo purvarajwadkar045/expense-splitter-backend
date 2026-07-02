@@ -52,3 +52,8 @@ class User(Base):
         "Expense",
         back_populates="payer"
     )
+    expense_splits = relationship(
+    "ExpenseSplit",
+    back_populates="user",
+    cascade="all, delete-orphan"
+    )
