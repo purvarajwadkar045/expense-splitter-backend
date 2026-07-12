@@ -5,21 +5,11 @@ from sqlalchemy.orm import Session, joinedload
 from app.models.expense import Expense
 from app.models.group import Group
 from app.models.group_member import GroupMember
+from app.services.authorization import check_group_membership
 
 def create_expense(group_id, expense_data, current_user, db):
-    # Verify group exists
-    group = db.query(Group).filter(Group.id == group_id).first()
-    if not group:
-        raise HTTPException(status_code=404, detail="Group not found")
-
-    # Verify current user is a member of the group
-    is_member = db.query(GroupMember).filter(
-        GroupMember.group_id == group_id,
-        GroupMember.user_id == current_user.id
-    ).first()
-    
-    if not is_member:
-        raise HTTPException(status_code=403, detail="User is not a member of this group")
+    # Verify group exists and current user is a member
+    check_group_membership(db, group_id, current_user.id)
 
     # Reject amount <= 0
     if expense_data.amount <= 0:
@@ -57,19 +47,8 @@ def get_group_expenses(
     if limit <= 0:
         raise HTTPException(status_code=400, detail="Limit must be greater than 0")
 
-    # Verify group exists
-    group = db.query(Group).filter(Group.id == group_id).first()
-    if not group:
-        raise HTTPException(status_code=404, detail="Group not found")
-
-    # Verify current user is a member of the group
-    is_member = db.query(GroupMember).filter(
-        GroupMember.group_id == group_id,
-        GroupMember.user_id == current_user.id
-    ).first()
-    
-    if not is_member:
-        raise HTTPException(status_code=403, detail="User is not a member of this group")
+    # Verify group exists and current user is a member
+    check_group_membership(db, group_id, current_user.id)
 
     # Build Query with filters
     query = (

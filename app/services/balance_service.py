@@ -6,19 +6,11 @@ from app.models.expense_split import ExpenseSplit
 from app.models.user import User
 from fastapi import HTTPException
 from app.models.user import User
-def get_group_balances(group_id: int, db: Session):
+from app.services.authorization import check_group_membership
+def get_group_balances(group_id: int, current_user, db: Session):
 
-    group = (
-        db.query(Group)
-        .filter(Group.id == group_id)
-        .first()
-    )
-
-    if not group:
-        raise HTTPException(
-            status_code=404,
-            detail="Group not found"
-        )
+    # Verify group exists and current user is a member
+    group = check_group_membership(db, group_id, current_user.id)
 
     balances = {}
 

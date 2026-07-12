@@ -3,6 +3,7 @@ from fastapi import HTTPException
 from app.models.user import User
 from app.models.group import Group
 from app.models.group_member import GroupMember
+from app.services.authorization import check_group_creator
 
 def create_group(group_data, current_user, db):
     group = Group(
@@ -34,21 +35,7 @@ def add_member(
     db
 ):
 
-    group = db.query(Group).filter(
-        Group.id == group_id
-    ).first()
-
-    if not group:
-        raise HTTPException(
-            status_code=404,
-            detail="Group not found"
-        )
-
-    if group.created_by != current_user.id:
-        raise HTTPException(
-            status_code=403,
-            detail="Only creator can add members"
-        )
+    group = check_group_creator(db, group_id, current_user.id, detail="Only creator can add members")
 
     user = db.query(User).filter(
         User.email == email

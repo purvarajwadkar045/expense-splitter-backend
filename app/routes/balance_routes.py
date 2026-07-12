@@ -22,4 +22,4 @@ def group_balances(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    return get_group_balances(group_id, db)
+    return get_group_balances(group_id, current_user, db)

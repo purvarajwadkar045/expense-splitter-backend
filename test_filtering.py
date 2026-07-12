@@ -16,7 +16,7 @@ from app.models.group_member import GroupMember
 from app.models.expense import Expense
 from app.models.expense_split import ExpenseSplit
 from app.models.otp import OTP
-from app.services import expense_service
+from app.services import expense_service, balance_service
 
 class TestExpenseFiltering(unittest.TestCase):
     @classmethod
@@ -238,5 +238,35 @@ class TestExpenseFiltering(unittest.TestCase):
         self.assertEqual(len(res), 1)
         self.assertEqual(res[0]["id"], 1)
 
+    def test_get_balances_authorized(self):
+        """Should allow group member to calculate balances without raising HTTPException"""
+        res = balance_service.get_group_balances(
+            group_id=1,
+            current_user=self.user1,
+            db=self.db
+        )
+        self.assertIsNone(res)
+
+    def test_get_balances_unauthorized(self):
+        """Should raise 403 Forbidden when non-member tries to get group balances"""
+        with self.assertRaises(HTTPException) as context:
+            balance_service.get_group_balances(
+                group_id=1,
+                current_user=self.user3,
+                db=self.db
+            )
+        self.assertEqual(context.exception.status_code, 403)
+
+    def test_get_balances_nonexistent_group(self):
+        """Should raise 404 Not Found when calculating balances for a non-existent group"""
+        with self.assertRaises(HTTPException) as context:
+            balance_service.get_group_balances(
+                group_id=999,
+                current_user=self.user1,
+                db=self.db
+            )
+        self.assertEqual(context.exception.status_code, 404)
+
 if __name__ == "__main__":
     unittest.main()
+
