@@ -1,3 +1,5 @@
+from datetime import datetime
+from typing import Optional
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from app.dependencies.db import get_db
@@ -20,8 +22,22 @@ def create_expense(
 @router.get("/{group_id}/expenses", response_model=list[ExpenseHistoryResponse])
 def get_group_expenses(
     group_id: int,
+    user_id: Optional[int] = None,
+    start_date: Optional[datetime] = None,
+    end_date: Optional[datetime] = None,
+    page: int = 1,
+    limit: int = 10,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    return expense_service.get_group_expenses(group_id, current_user, db)
+    return expense_service.get_group_expenses(
+        group_id=group_id,
+        current_user=current_user,
+        db=db,
+        user_id=user_id,
+        start_date=start_date,
+        end_date=end_date,
+        page=page,
+        limit=limit
+    )
 

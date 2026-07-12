@@ -1,3 +1,5 @@
+from datetime import datetime
+from typing import Optional
 from fastapi import HTTPException
 from sqlalchemy.orm import Session, joinedload
 from app.models.expense import Expense
@@ -39,7 +41,22 @@ def create_expense(group_id, expense_data, current_user, db):
     return expense
 
 
-def get_group_expenses(group_id: int, current_user, db: Session):
+def get_group_expenses(
+    group_id: int,
+    current_user,
+    db: Session,
+    user_id: Optional[int] = None,
+    start_date: Optional[datetime] = None,
+    end_date: Optional[datetime] = None,
+    page: int = 1,
+    limit: int = 10
+):
+    # Validate page and limit values
+    if page <= 0:
+        raise HTTPException(status_code=400, detail="Page must be greater than 0")
+    if limit <= 0:
+        raise HTTPException(status_code=400, detail="Limit must be greater than 0")
+
     # Verify group exists
     group = db.query(Group).filter(Group.id == group_id).first()
     if not group:
@@ -54,12 +71,26 @@ def get_group_expenses(group_id: int, current_user, db: Session):
     if not is_member:
         raise HTTPException(status_code=403, detail="User is not a member of this group")
 
-    # Retrieve all expenses for the group ordered by newest first
-    expenses = (
+    # Build Query with filters
+    query = (
         db.query(Expense)
         .options(joinedload(Expense.payer))
         .filter(Expense.group_id == group_id)
-        .order_by(Expense.created_at.desc())
+    )
+
+    if user_id is not None:
+        query = query.filter(Expense.paid_by == user_id)
+    if start_date is not None:
+        query = query.filter(Expense.created_at >= start_date)
+    if end_date is not None:
+        query = query.filter(Expense.created_at <= end_date)
+
+    # Retrieve expenses ordered by newest first with pagination
+    offset = (page - 1) * limit
+    expenses = (
+        query.order_by(Expense.created_at.desc())
+        .offset(offset)
+        .limit(limit)
         .all()
     )
 
