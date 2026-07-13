@@ -28,3 +28,8 @@ class Group(Base):
         back_populates="group",
         cascade="all, delete-orphan"
     )
+    settlements = relationship(
+        "Settlement",
+        back_populates="group",
+        cascade="all, delete-orphan"
+    )

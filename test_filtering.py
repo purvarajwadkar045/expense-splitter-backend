@@ -16,7 +16,8 @@ from app.models.group_member import GroupMember
 from app.models.expense import Expense
 from app.models.expense_split import ExpenseSplit
 from app.models.otp import OTP
-from app.services import expense_service, balance_service
+from app.services import expense_service, balance_service, settlement_service
+from app.schemas.settlement import SettlementCreate
 
 class TestExpenseFiltering(unittest.TestCase):
     @classmethod
@@ -239,13 +240,27 @@ class TestExpenseFiltering(unittest.TestCase):
         self.assertEqual(res[0]["id"], 1)
 
     def test_get_balances_authorized(self):
-        """Should allow group member to calculate balances without raising HTTPException"""
+        """Should allow group member to calculate balances correctly"""
         res = balance_service.get_group_balances(
             group_id=1,
             current_user=self.user1,
             db=self.db
         )
-        self.assertIsNone(res)
+        self.assertIsNotNone(res)
+        self.assertEqual(len(res), 2)
+        balances_dict = {b["user_id"]: b for b in res}
+        self.assertIn(1, balances_dict)
+        self.assertIn(2, balances_dict)
+        
+        # Verify Alice's balance
+        self.assertEqual(balances_dict[1]["paid"], 250.0)
+        self.assertEqual(balances_dict[1]["owes"], 135.0)
+        self.assertEqual(balances_dict[1]["balance"], 115.0)
+        
+        # Verify Bob's balance
+        self.assertEqual(balances_dict[2]["paid"], 20.0)
+        self.assertEqual(balances_dict[2]["owes"], 135.0)
+        self.assertEqual(balances_dict[2]["balance"], -115.0)
 
     def test_get_balances_unauthorized(self):
         """Should raise 403 Forbidden when non-member tries to get group balances"""
@@ -266,6 +281,103 @@ class TestExpenseFiltering(unittest.TestCase):
                 db=self.db
             )
         self.assertEqual(context.exception.status_code, 404)
+
+    def test_create_settlement_success(self):
+        """Should successfully create a settlement and update balances"""
+        # Bob pays Alice 115.0 to settle debt
+        settlement_data = SettlementCreate(
+            payer_id=2,
+            receiver_id=1,
+            amount=115.0
+        )
+        
+        settlement = settlement_service.create_settlement(
+            group_id=1,
+            settlement_data=settlement_data,
+            current_user=self.user1,
+            db=self.db
+        )
+        
+        self.assertEqual(settlement.group_id, 1)
+        self.assertEqual(settlement.payer_id, 2)
+        self.assertEqual(settlement.receiver_id, 1)
+        self.assertEqual(settlement.amount, 115.0)
+        
+        # Verify balances after settlement are both 0.0
+        res = balance_service.get_group_balances(
+            group_id=1,
+            current_user=self.user1,
+            db=self.db
+        )
+        balances_dict = {b["user_id"]: b for b in res}
+        self.assertEqual(balances_dict[1]["balance"], 0.0)
+        self.assertEqual(balances_dict[2]["balance"], 0.0)
+
+    def test_create_settlement_invalid_amount(self):
+        """Should raise 400 Bad Request for zero or negative amount"""
+        settlement_data = SettlementCreate(
+            payer_id=2,
+            receiver_id=1,
+            amount=0.0
+        )
+        with self.assertRaises(HTTPException) as context:
+            settlement_service.create_settlement(
+                group_id=1,
+                settlement_data=settlement_data,
+                current_user=self.user1,
+                db=self.db
+            )
+        self.assertEqual(context.exception.status_code, 400)
+        self.assertIn("Amount must be greater than zero", context.exception.detail)
+
+    def test_create_settlement_non_member_payer(self):
+        """Should raise 403 Forbidden if payer is not in the group"""
+        settlement_data = SettlementCreate(
+            payer_id=3,  # Charlie is user 3 (not in group 1)
+            receiver_id=1,
+            amount=50.0
+        )
+        with self.assertRaises(HTTPException) as context:
+            settlement_service.create_settlement(
+                group_id=1,
+                settlement_data=settlement_data,
+                current_user=self.user1,
+                db=self.db
+            )
+        self.assertEqual(context.exception.status_code, 403)
+        self.assertIn("Payer is not a member of this group", context.exception.detail)
+
+    def test_create_settlement_non_member_receiver(self):
+        """Should raise 403 Forbidden if receiver is not in the group"""
+        settlement_data = SettlementCreate(
+            payer_id=2,
+            receiver_id=3,  # Charlie is user 3 (not in group 1)
+            amount=50.0
+        )
+        with self.assertRaises(HTTPException) as context:
+            settlement_service.create_settlement(
+                group_id=1,
+                settlement_data=settlement_data,
+                current_user=self.user1,
+                db=self.db
+            )
+        self.assertEqual(context.exception.status_code, 403)
+        self.assertIn("Receiver is not a member of this group", context.exception.detail)
+
+    def test_get_settlement_history(self):
+        """Should retrieve settlement history sorted by latest first"""
+        # Create two settlements
+        settlement_data1 = SettlementCreate(payer_id=2, receiver_id=1, amount=10.0)
+        settlement_data2 = SettlementCreate(payer_id=2, receiver_id=1, amount=20.0)
+        
+        s1 = settlement_service.create_settlement(1, settlement_data1, self.user1, self.db)
+        s2 = settlement_service.create_settlement(1, settlement_data2, self.user1, self.db)
+        
+        history = settlement_service.get_settlement_history(1, self.user1, self.db)
+        self.assertEqual(len(history), 2)
+        # s2 was created second, so it should be first in descending order
+        self.assertEqual(history[0].id, s2.id)
+        self.assertEqual(history[1].id, s1.id)
 
 if __name__ == "__main__":
     unittest.main()

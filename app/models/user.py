@@ -57,3 +57,15 @@ class User(Base):
     back_populates="user",
     cascade="all, delete-orphan"
     )
+    settlements_paid = relationship(
+        "Settlement",
+        foreign_keys="[Settlement.payer_id]",
+        back_populates="payer",
+        cascade="all, delete-orphan"
+    )
+    settlements_received = relationship(
+        "Settlement",
+        foreign_keys="[Settlement.receiver_id]",
+        back_populates="receiver",
+        cascade="all, delete-orphan"
+    )
