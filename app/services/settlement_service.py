@@ -40,6 +40,16 @@ def create_settlement(group_id: int, settlement_data: SettlementCreate, current_
     db.add(settlement)
     db.commit()
     db.refresh(settlement)
+
+    payer = db.query(User).filter(User.id == settlement.payer_id).first()
+    receiver = db.query(User).filter(User.id == settlement.receiver_id).first()
+    payer_username = payer.username if payer else "Unknown"
+    receiver_username = receiver.username if receiver else "Unknown"
+
+    from app.services.activity_service import log_activity
+    amount_str = f"₹{int(settlement.amount)}" if settlement.amount.is_integer() else f"₹{settlement.amount:.2f}"
+    log_activity(db, group_id, current_user.id, "SETTLEMENT_CREATED", f"{payer_username} paid {receiver_username} {amount_str}")
+
     return settlement
 
 def get_settlement_history(group_id: int, current_user: User, db: Session):

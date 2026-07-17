@@ -25,6 +25,9 @@ def create_group(group_data, current_user, db):
     db.commit()
     db.refresh(group)
     
+    from app.services.activity_service import log_activity
+    log_activity(db, group.id, current_user.id, "GROUP_CREATED", f"{current_user.username} created group '{group.name}'")
+    
     return group
 
 
@@ -65,5 +68,8 @@ def add_member(
 
     db.add(member)
     db.commit()
+
+    from app.services.activity_service import log_activity
+    log_activity(db, group.id, current_user.id, "MEMBER_ADDED", f"{current_user.username} added {user.username} to the group")
 
     return {"message": "Member added"}

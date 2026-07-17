@@ -16,6 +16,8 @@ from app.routes import balance_routes
 from app.routes import settlement_routes
 from app.routes import dashboard_routes
 from app.routes import simplify_routes
+from app.routes import activity_routes
+from app.models.activity import Activity
 from app.routes.auth_routes import router as auth_router
 
 Base.metadata.create_all(bind=engine)
@@ -32,3 +34,4 @@ app.include_router(balance_routes.router)
 app.include_router(settlement_routes.router)
 app.include_router(dashboard_routes.router)
 app.include_router(simplify_routes.router)
+app.include_router(activity_routes.router)

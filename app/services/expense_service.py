@@ -29,6 +29,10 @@ def create_expense(group_id, expense_data, current_user, db):
     db.commit()
     db.refresh(expense)
     
+    from app.services.activity_service import log_activity
+    amount_str = f"₹{int(expense.amount)}" if expense.amount.is_integer() else f"₹{expense.amount:.2f}"
+    log_activity(db, group_id, current_user.id, "EXPENSE_CREATED", f"{current_user.username} added an expense '{expense.title}' of {amount_str}")
+
     return expense
 
 
@@ -152,6 +156,11 @@ def update_expense(expense_id: int, expense_data, current_user, db: Session):
 
     db.commit()
     db.refresh(expense)
+
+    from app.services.activity_service import log_activity
+    amount_str = f"₹{int(expense.amount)}" if expense.amount.is_integer() else f"₹{expense.amount:.2f}"
+    log_activity(db, expense.group_id, current_user.id, "EXPENSE_UPDATED", f"{current_user.username} updated the expense '{expense.title}' to {amount_str}")
+
     return expense
 
 
@@ -165,10 +174,17 @@ def delete_expense(expense_id: int, current_user, db: Session):
     if expense.paid_by != current_user.id:
         raise HTTPException(status_code=403, detail="Permission denied")
 
+    # Save fields before deletion
+    group_id = expense.group_id
+    expense_title = expense.title
+
     # 3. Delete associated ExpenseSplit records first
     db.query(ExpenseSplit).filter(ExpenseSplit.expense_id == expense.id).delete()
 
     # 4. Delete the Expense
     db.delete(expense)
     db.commit()
+
+    from app.services.activity_service import log_activity
+    log_activity(db, group_id, current_user.id, "EXPENSE_DELETED", f"{current_user.username} deleted the expense '{expense_title}'")
 
