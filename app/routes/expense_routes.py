@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from app.dependencies.db import get_db
 from app.dependencies.auth import get_current_user
-from app.schemas.expense import ExpenseCreate, ExpenseResponse, ExpenseHistoryResponse
+from app.schemas.expense import ExpenseCreate, ExpenseResponse, ExpenseHistoryResponse, ExpenseUpdate
 from app.services import expense_service
 from app.models.user import User
 
@@ -41,3 +41,25 @@ def get_group_expenses(
         limit=limit
     )
 
+
+expense_direct_router = APIRouter(prefix="/expenses", tags=["Expenses"])
+
+
+@expense_direct_router.put("/{expense_id}", response_model=ExpenseResponse)
+def update_expense(
+    expense_id: int,
+    expense_data: ExpenseUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    return expense_service.update_expense(expense_id, expense_data, current_user, db)
+
+
+@expense_direct_router.delete("/{expense_id}")
+def delete_expense(
+    expense_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    expense_service.delete_expense(expense_id, current_user, db)
+    return {"message": "Expense deleted successfully"}

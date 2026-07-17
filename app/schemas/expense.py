@@ -1,6 +1,6 @@
 from pydantic import BaseModel, ConfigDict
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List
 
 class ExpenseCreate(BaseModel):
     title: str
@@ -28,4 +28,12 @@ class ExpenseHistoryResponse(BaseModel):
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class ExpenseUpdate(BaseModel):
+    title: Optional[str] = None
+    amount: Optional[float] = None
+    description: Optional[str] = None
+    participants: Optional[List[int]] = None
+
 
