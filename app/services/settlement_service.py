@@ -50,6 +50,24 @@ def create_settlement(group_id: int, settlement_data: SettlementCreate, current_
     amount_str = f"₹{int(settlement.amount)}" if settlement.amount.is_integer() else f"₹{settlement.amount:.2f}"
     log_activity(db, group_id, current_user.id, "SETTLEMENT_CREATED", f"{payer_username} paid {receiver_username} {amount_str}")
 
+    from app.services.notification_service import create_notification
+    # Notify Receiver
+    if receiver and receiver.id != current_user.id:
+        create_notification(
+            db,
+            user_id=receiver.id,
+            title="Settlement Completed",
+            message=f"{payer_username} paid you {amount_str}."
+        )
+    # Notify Payer
+    if payer and payer.id != current_user.id:
+        create_notification(
+            db,
+            user_id=payer.id,
+            title="Settlement Completed",
+            message=f"Your settlement of {amount_str} to {receiver_username} has been recorded."
+        )
+
     return settlement
 
 def get_settlement_history(group_id: int, current_user: User, db: Session):

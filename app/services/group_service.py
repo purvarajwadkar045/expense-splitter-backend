@@ -72,4 +72,12 @@ def add_member(
     from app.services.activity_service import log_activity
     log_activity(db, group.id, current_user.id, "MEMBER_ADDED", f"{current_user.username} added {user.username} to the group")
 
+    from app.services.notification_service import create_notification
+    create_notification(
+        db,
+        user_id=user.id,
+        title="Added to Group",
+        message=f"You have been added to the group '{group.name}' by {current_user.username}."
+    )
+
     return {"message": "Member added"}

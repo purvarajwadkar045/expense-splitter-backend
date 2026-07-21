@@ -33,6 +33,20 @@ def create_expense(group_id, expense_data, current_user, db):
     amount_str = f"₹{int(expense.amount)}" if expense.amount.is_integer() else f"₹{expense.amount:.2f}"
     log_activity(db, group_id, current_user.id, "EXPENSE_CREATED", f"{current_user.username} added an expense '{expense.title}' of {amount_str}")
 
+    # Log Notification to other group members
+    group = db.query(Group).filter(Group.id == group_id).first()
+    group_name = group.name if group else "Unknown Group"
+    members = db.query(GroupMember).filter(GroupMember.group_id == group_id).all()
+    from app.services.notification_service import create_notification
+    for member in members:
+        if member.user_id != current_user.id:
+            create_notification(
+                db,
+                user_id=member.user_id,
+                title="Expense Added",
+                message=f"{current_user.username} added a new expense in {group_name}."
+            )
+
     return expense
 
 
@@ -161,6 +175,20 @@ def update_expense(expense_id: int, expense_data, current_user, db: Session):
     amount_str = f"₹{int(expense.amount)}" if expense.amount.is_integer() else f"₹{expense.amount:.2f}"
     log_activity(db, expense.group_id, current_user.id, "EXPENSE_UPDATED", f"{current_user.username} updated the expense '{expense.title}' to {amount_str}")
 
+    # Log Notification to other group members
+    group = db.query(Group).filter(Group.id == expense.group_id).first()
+    group_name = group.name if group else "Unknown Group"
+    members = db.query(GroupMember).filter(GroupMember.group_id == expense.group_id).all()
+    from app.services.notification_service import create_notification
+    for member in members:
+        if member.user_id != current_user.id:
+            create_notification(
+                db,
+                user_id=member.user_id,
+                title="Expense Updated",
+                message=f"{current_user.username} updated the expense '{expense.title}' in {group_name}."
+            )
+
     return expense
 
 
@@ -187,4 +215,18 @@ def delete_expense(expense_id: int, current_user, db: Session):
 
     from app.services.activity_service import log_activity
     log_activity(db, group_id, current_user.id, "EXPENSE_DELETED", f"{current_user.username} deleted the expense '{expense_title}'")
+
+    # Log Notification to other group members
+    group = db.query(Group).filter(Group.id == group_id).first()
+    group_name = group.name if group else "Unknown Group"
+    members = db.query(GroupMember).filter(GroupMember.group_id == group_id).all()
+    from app.services.notification_service import create_notification
+    for member in members:
+        if member.user_id != current_user.id:
+            create_notification(
+                db,
+                user_id=member.user_id,
+                title="Expense Deleted",
+                message=f"{current_user.username} deleted the expense '{expense_title}' in {group_name}."
+            )
 
