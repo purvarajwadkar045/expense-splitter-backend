@@ -1,4 +1,4 @@
-from sqlalchemy import Column
+from sqlalchemy import Column, Boolean
 from sqlalchemy.orm import relationship
 from sqlalchemy import Integer
 from sqlalchemy import String
@@ -38,6 +38,13 @@ class User(Base):
         DateTime,
         default=datetime.utcnow
     )
+
+    is_verified = Column(
+        Boolean,
+        default=False,
+        nullable=False
+    )
+
     created_groups = relationship(
     "Group",
     back_populates="creator"

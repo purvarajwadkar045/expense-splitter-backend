@@ -25,10 +25,21 @@ from app.routes import dashboard_routes
 from app.routes import simplify_routes
 from app.routes import activity_routes
 from app.models.activity import Activity
-from app.routes import notification_routes
 from app.models.notification import Notification
+from app.models.otp import UserOTP
+from sqlalchemy import text
 
+# Dynamic database schema check/upgrade on startup
 Base.metadata.create_all(bind=engine)
+
+if "sqlite" not in str(engine.url):
+    try:
+        with engine.connect() as conn:
+            conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS is_verified BOOLEAN DEFAULT FALSE;"))
+            conn.commit()
+    except Exception as e:
+        import logging
+        logging.getLogger("app").warning(f"Could not check/add is_verified column: {e}")
 
 app = FastAPI()
 register_exception_handlers(app)

@@ -21,7 +21,8 @@ def register_user(user: UserCreate, db: Session):
     new_user = User(
         username=user.username,
         email=user.email,
-        password_hash=hash_password(user.password)
+        password_hash=hash_password(user.password),
+        is_verified=False
     )
 
     db.add(new_user)
@@ -51,6 +52,16 @@ def login_user(login_data: UserLogin, db: Session):
         raise HTTPException(
             status_code=401,
             detail="Incorrect password"
+        )
+
+    if not user.is_verified:
+        logger.warning(
+            "Login attempt failed: email not verified",
+            extra={"extra_info": {"email": login_data.email, "user_id": user.id}}
+        )
+        raise HTTPException(
+            status_code=400,
+            detail="Please verify your email before logging in."
         )
 
     access_token = create_access_token(
