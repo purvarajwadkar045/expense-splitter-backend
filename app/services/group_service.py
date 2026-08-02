@@ -81,3 +81,80 @@ def add_member(
     )
 
     return {"message": "Member added"}
+
+
+def get_user_groups(current_user, db):
+    # Query all groups where the user is a member
+    memberships = db.query(GroupMember).filter(GroupMember.user_id == current_user.id).all()
+    groups_list = []
+    for m in memberships:
+        group = m.group
+        # Get members usernames
+        group_members = db.query(GroupMember).filter(GroupMember.group_id == group.id).all()
+        members_usernames = []
+        for gm in group_members:
+            if gm.user_id == current_user.id:
+                members_usernames.append("You")
+            else:
+                members_usernames.append(gm.user.username)
+        
+        groups_list.append({
+            "id": group.id,
+            "name": group.name,
+            "description": group.description,
+            "created_by": group.created_by,
+            "created_at": group.created_at,
+            "members": members_usernames
+        })
+    return groups_list
+
+
+def get_group_by_id(group_id, current_user, db):
+    # Verify group exists and current user is a member
+    membership = db.query(GroupMember).filter(
+        GroupMember.group_id == group_id,
+        GroupMember.user_id == current_user.id
+    ).first()
+    if not membership:
+        raise HTTPException(status_code=404, detail="Group not found or access denied")
+    
+    group = membership.group
+    group_members = db.query(GroupMember).filter(GroupMember.group_id == group.id).all()
+    members_usernames = []
+    for gm in group_members:
+        if gm.user_id == current_user.id:
+            members_usernames.append("You")
+        else:
+            members_usernames.append(gm.user.username)
+            
+    return {
+        "id": group.id,
+        "name": group.name,
+        "description": group.description,
+        "created_by": group.created_by,
+        "created_at": group.created_at,
+        "members": members_usernames
+    }
+
+
+def update_group(group_id, group_data, current_user, db):
+    group = check_group_creator(db, group_id, current_user.id, detail="Only creator can modify this group")
+    if group_data.name:
+        group.name = group_data.name
+    if group_data.description is not None:
+        group.description = group_data.description
+        
+    db.commit()
+    db.refresh(group)
+    
+    from app.services.activity_service import log_activity
+    log_activity(db, group.id, current_user.id, "GROUP_UPDATED", f"{current_user.username} updated group details")
+    
+    return group
+
+
+def delete_group(group_id, current_user, db):
+    group = check_group_creator(db, group_id, current_user.id, detail="Only creator can delete this group")
+    db.delete(group)
+    db.commit()
+    return {"message": "Group deleted successfully"}

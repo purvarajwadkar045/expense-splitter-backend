@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import Column, Integer, Boolean, DateTime, ForeignKey
+from sqlalchemy import Column, Integer, Boolean, DateTime, ForeignKey, UniqueConstraint
 from sqlalchemy.orm import relationship
 
 from app.db.database import Base
@@ -8,6 +8,7 @@ from app.db.database import Base
 
 class GroupMember(Base):
     __tablename__ = "group_members"
+    __table_args__ = (UniqueConstraint('group_id', 'user_id', name='_group_user_uc'),)
 
     id = Column(Integer, primary_key=True, index=True)
 

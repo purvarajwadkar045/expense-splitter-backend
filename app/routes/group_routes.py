@@ -42,3 +42,39 @@ def add_member(
         current_user,
         db
     )
+
+
+@router.get("")
+def get_groups(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    return group_service.get_user_groups(current_user, db)
+
+
+@router.get("/{group_id}")
+def get_group(
+    group_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    return group_service.get_group_by_id(group_id, current_user, db)
+
+
+@router.put("/{group_id}", response_model=GroupResponse)
+def update_group(
+    group_id: int,
+    group: GroupCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    return group_service.update_group(group_id, group, current_user, db)
+
+
+@router.delete("/{group_id}")
+def delete_group(
+    group_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    return group_service.delete_group(group_id, current_user, db)

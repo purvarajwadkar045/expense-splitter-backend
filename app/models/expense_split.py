@@ -1,9 +1,10 @@
-from sqlalchemy import Column,Integer,Float,ForeignKey
+from sqlalchemy import Column,Integer,Float,ForeignKey,UniqueConstraint
 from sqlalchemy.orm import relationship
 from app.db.database import Base
 
 class ExpenseSplit(Base):
     __tablename__="expense_splits"
+    __table_args__ = (UniqueConstraint('expense_id', 'user_id', name='_expense_user_uc'),)
 
     id=Column(
         Integer,

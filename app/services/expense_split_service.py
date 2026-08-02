@@ -7,8 +7,6 @@ from app.models.expense import Expense
 from app.models.expense_split import ExpenseSplit
 from app.models.user import User
 from app.schemas.expense_split import EqualExpenseCreate
-from app.services.authorization import check_group_membership
-
 
 def create_equal_expense(
     group_id: int,
@@ -16,8 +14,17 @@ def create_equal_expense(
     current_user: User,
     db: Session
 ):
-    # Verify group exists and current user is a member
-    group = check_group_membership(db, group_id, current_user.id)
+    group = (
+        db.query(Group)
+        .filter(Group.id == group_id)
+        .first()
+    )
+
+    if not group:
+        raise HTTPException(
+            status_code=404,
+            detail="Group not found"
+        )
 
     if expense_data.amount <= 0:
         raise HTTPException(

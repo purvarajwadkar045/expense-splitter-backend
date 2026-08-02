@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from app.core.logging_config import setup_logging
 from app.core.exceptions import register_exception_handlers
 
@@ -26,15 +27,21 @@ from app.routes import activity_routes
 from app.models.activity import Activity
 from app.routes import notification_routes
 from app.models.notification import Notification
-from app.routes.auth_routes import router as auth_router
 
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 register_exception_handlers(app)
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-app.include_router(auth_router)
+
 app.include_router(auth_routes.router)
 app.include_router(user_routes.router)
 app.include_router(group_routes.router)

@@ -16,5 +16,8 @@ class Expense(Base):
 
     group = relationship("Group", back_populates="expenses")
     payer = relationship("User", back_populates="expenses_paid")
-    splits = relationship("ExpenseSplit", back_populates="expense", cascade="all, delete-orphan")
-
+    splits=relationship(
+        "ExpenseSplit",
+        back_populates="expense",
+        cascade="all,delete-orphan"
+    )

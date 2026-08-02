@@ -1,10 +1,13 @@
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-import os
+import logging
+from app.core.config import settings
 
-EMAIL=os.getenv("EMAIL")
-EMAIL_PASSWORD=os.getenv("EMAIL_PASSWORD")
+logger = logging.getLogger("app")
+
+EMAIL = settings.EMAIL
+EMAIL_PASSWORD = settings.EMAIL_PASSWORD
 
 def send_otp_email(to_email:str,otp:str):
     subject="your OTP code"
@@ -25,4 +28,4 @@ def send_otp_email(to_email:str,otp:str):
         server.send_message(msg)
         server.quit()
     except Exception as e:
-        print("Email sending failed")    
+        logger.error("Email sending failed", exc_info=True)

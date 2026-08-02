@@ -25,3 +25,10 @@ class TokenResponse(BaseModel):
 
 class MessageResponse(BaseModel):
     message: str
+
+class UserUpdate(BaseModel):
+    username: str
+
+class PasswordChangeRequest(BaseModel):
+    current_password: str
+    new_password: str
