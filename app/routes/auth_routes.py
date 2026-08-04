@@ -57,6 +57,7 @@ def register(
     db.commit()
 
     send_otp_email(user.email, otp)
+    print(f"\n[DEVELOPMENT ONLY] OTP code for {user.email} is: {otp}\n")
 
     return new_user
 
@@ -155,6 +156,7 @@ def resend_otp(
     db.commit()
 
     send_otp_email(request.email, otp)
+    print(f"\n[DEVELOPMENT ONLY] OTP code for {request.email} is: {otp}\n")
 
     return {"message": "Verification code sent successfully"}
 
@@ -195,6 +197,7 @@ def forgot_password(
     db.commit()
     
     send_otp_email(request.email, otp)
+    print(f"\n[DEVELOPMENT ONLY] Forgot password OTP code for {request.email} is: {otp}\n")
     
     return {"message": "Verification code sent successfully"}
 

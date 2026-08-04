@@ -24,6 +24,7 @@ from app.routes import settlement_routes
 from app.routes import dashboard_routes
 from app.routes import simplify_routes
 from app.routes import activity_routes
+from app.routes import notification_routes
 from app.models.activity import Activity
 from app.models.notification import Notification
 from app.models.otp import UserOTP
