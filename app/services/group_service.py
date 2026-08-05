@@ -137,6 +137,60 @@ def get_group_by_id(group_id, current_user, db):
     }
 
 
+def remove_member(
+    group_id,
+    username,
+    current_user,
+    db
+):
+    # Only group creator can remove members
+    group = check_group_creator(db, group_id, current_user.id, detail="Only creator can remove members")
+
+    user = db.query(User).filter(
+        User.username == username
+    ).first()
+
+    if not user:
+        raise HTTPException(
+            status_code=404,
+            detail="User not found"
+        )
+
+    membership = db.query(GroupMember).filter(
+        GroupMember.group_id == group.id,
+        GroupMember.user_id == user.id
+    ).first()
+
+    if not membership:
+        raise HTTPException(
+            status_code=404,
+            detail="User is not a member of this group"
+        )
+
+    # Prevent removing the creator
+    if user.id == group.created_by:
+        raise HTTPException(
+            status_code=400,
+            detail="Cannot remove the group creator"
+        )
+
+    db.delete(membership)
+    db.commit()
+
+    from app.services.activity_service import log_activity
+    log_activity(db, group.id, current_user.id, "MEMBER_REMOVED", f"{current_user.username} removed {user.username} from the group")
+
+    from app.services.notification_service import create_notification
+    create_notification(
+        db,
+        user_id=user.id,
+        title="Removed from Group",
+        message=f"You have been removed from the group '{group.name}' by {current_user.username}."
+    )
+
+    return {"message": "Member removed"}
+
+
 def update_group(group_id, group_data, current_user, db):
     group = check_group_creator(db, group_id, current_user.id, detail="Only creator can modify this group")
     if group_data.name:

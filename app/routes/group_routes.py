@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.dependencies.db import get_db
-from app.schemas.group import GroupCreate, GroupResponse, AddMember
+from app.schemas.group import GroupCreate, GroupResponse, AddMember, RemoveMember
 from app.services import group_service
 from app.dependencies.auth import get_current_user
 from app.models.user import User
@@ -39,6 +39,21 @@ def add_member(
     return group_service.add_member(
         group_id,
         member.email,
+        current_user,
+        db
+    )
+
+
+@router.delete("/{group_id}/members")
+def remove_member(
+    group_id: int,
+    member: RemoveMember,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    return group_service.remove_member(
+        group_id,
+        member.username,
         current_user,
         db
     )

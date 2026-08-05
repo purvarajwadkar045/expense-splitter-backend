@@ -5,6 +5,9 @@ from typing import Optional
 class AddMember(BaseModel):
     email: str
 
+class RemoveMember(BaseModel):
+    username: str
+
 class GroupCreate(BaseModel):
     name: str
     description: Optional[str] = None
