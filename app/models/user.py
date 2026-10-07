@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Boolean
+from sqlalchemy import Column, Boolean, Integer
 from sqlalchemy.orm import relationship
 from sqlalchemy import Integer
 from sqlalchemy import String
@@ -45,6 +45,8 @@ class User(Base):
         nullable=False
     )
 
+    token_version = Column(Integer, default=0, server_default="0", nullable=False)
+
     created_groups = relationship(
     "Group",
     back_populates="creator"
@@ -74,5 +76,10 @@ class User(Base):
         "Settlement",
         foreign_keys="[Settlement.receiver_id]",
         back_populates="receiver",
+        cascade="all, delete-orphan"
+    )
+    budgets = relationship(
+        "Budget",
+        back_populates="user",
         cascade="all, delete-orphan"
     )

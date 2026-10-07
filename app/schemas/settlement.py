@@ -1,10 +1,10 @@
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 from datetime import datetime
 
 class SettlementCreate(BaseModel):
     payer_id: int
     receiver_id: int
-    amount: float
+    amount: float = Field(allow_inf_nan=False)
 
 class SettlementResponse(BaseModel):
     id: int

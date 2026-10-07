@@ -313,6 +313,39 @@ class TestExpenseFiltering(unittest.TestCase):
         self.assertEqual(balances_dict[1]["balance"], 0.0)
         self.assertEqual(balances_dict[2]["balance"], 0.0)
 
+    def test_settlement_reduces_outstanding_debt_without_double_counting(self):
+        """A settlement must adjust a user's net balance, not add another obligation."""
+        self.db.query(ExpenseSplit).delete()
+        self.db.query(Expense).delete()
+        expense = Expense(
+            id=10,
+            title="Food",
+            amount=1000.0,
+            group_id=1,
+            paid_by=1,
+        )
+        self.db.add(expense)
+        self.db.add_all([
+            ExpenseSplit(expense_id=10, user_id=1, amount=500.0),
+            ExpenseSplit(expense_id=10, user_id=2, amount=500.0),
+        ])
+        self.db.commit()
+
+        settlement_service.create_settlement(
+            group_id=1,
+            settlement_data=SettlementCreate(payer_id=2, receiver_id=1, amount=500.0),
+            current_user=self.user1,
+            db=self.db,
+        )
+
+        balances = {balance["user_id"]: balance for balance in balance_service.get_group_balances(
+            group_id=1,
+            current_user=self.user1,
+            db=self.db,
+        )}
+        self.assertEqual(balances[1]["balance"], 0.0)
+        self.assertEqual(balances[2]["balance"], 0.0)
+
     def test_create_settlement_invalid_amount(self):
         """Should raise 400 Bad Request for zero or negative amount"""
         settlement_data = SettlementCreate(

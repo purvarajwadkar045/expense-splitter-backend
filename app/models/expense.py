@@ -9,6 +9,7 @@ class Expense(Base):
     id = Column(Integer, primary_key=True, index=True)
     title = Column(String, nullable=False)
     amount = Column(Float, nullable=False)
+    category = Column(String, nullable=False, default="Other", server_default="Other")
     description = Column(String, nullable=True)
     group_id = Column(Integer, ForeignKey("groups.id"), nullable=False)
     paid_by = Column(Integer, ForeignKey("users.id"), nullable=False)

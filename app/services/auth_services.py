@@ -66,7 +66,8 @@ def login_user(login_data: UserLogin, db: Session):
 
     access_token = create_access_token(
         {
-            "sub": user.email
+            "sub": user.email,
+            "ver": user.token_version,
         }
     )
     logger.info(
@@ -76,4 +77,4 @@ def login_user(login_data: UserLogin, db: Session):
     return {
         "access_token": access_token,
         "token_type": "bearer"
-    }
+    }

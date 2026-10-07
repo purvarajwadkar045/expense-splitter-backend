@@ -145,6 +145,56 @@ class TestExpenseUpdateDelete(unittest.TestCase):
             )
         self.assertEqual(context.exception.status_code, 400)
 
+    def test_update_expense_custom_splits(self):
+        """Should accept explicit custom splits and persist them"""
+        exp = Expense(id=10, title="Custom", amount=120.0, group_id=1, paid_by=1)
+        self.db.add(exp)
+        self.db.commit()
+
+        # custom splits: user1 -> 50, user2 -> 70
+        update_data = ExpenseUpdate(participants=None, splits=[{"user_id":1, "amount":50.0}, {"user_id":2, "amount":70.0}])
+
+        updated_exp = expense_service.update_expense(
+            expense_id=10,
+            expense_data=update_data,
+            current_user=self.user1,
+            db=self.db
+        )
+
+        self.assertEqual(updated_exp.amount, 120.0)
+        splits = self.db.query(ExpenseSplit).filter(ExpenseSplit.expense_id == 10).all()
+        self.assertEqual(len(splits), 2)
+        amounts = sorted([s.amount for s in splits])
+        self.assertEqual(amounts, [50.0, 70.0])
+
+    def test_update_expense_rejects_custom_splits_with_wrong_total(self):
+        """Should reject custom shares unless their sum equals the expense amount"""
+        exp = Expense(id=11, title="Invalid Custom", amount=100.0, group_id=1, paid_by=1)
+        self.db.add(exp)
+        self.db.commit()
+
+        update_data = ExpenseUpdate(
+            splits=[
+                {"user_id": 1, "amount": 50.0},
+                {"user_id": 2, "amount": 30.0},
+            ]
+        )
+
+        with self.assertRaises(HTTPException) as context:
+            expense_service.update_expense(
+                expense_id=11,
+                expense_data=update_data,
+                current_user=self.user1,
+                db=self.db
+            )
+
+        self.assertEqual(context.exception.status_code, 400)
+        self.assertIn("Sum of split amounts must equal expense amount", context.exception.detail)
+        self.assertEqual(
+            self.db.query(ExpenseSplit).filter(ExpenseSplit.expense_id == 11).count(),
+            0,
+        )
+
     def test_delete_expense_success(self):
         """Should successfully delete splits first, then delete the expense"""
         exp = Expense(id=10, title="Snacks", amount=20.0, group_id=1, paid_by=1)

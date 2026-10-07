@@ -25,9 +25,11 @@ from app.routes import dashboard_routes
 from app.routes import simplify_routes
 from app.routes import activity_routes
 from app.routes import notification_routes
+from app.routes import analytics_routes
 from app.models.activity import Activity
 from app.models.notification import Notification
 from app.models.otp import UserOTP
+from app.models.budget import Budget
 from sqlalchemy import text
 
 # Dynamic database schema check/upgrade on startup
@@ -36,11 +38,22 @@ Base.metadata.create_all(bind=engine)
 if "sqlite" not in str(engine.url):
     try:
         with engine.connect() as conn:
+            conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS token_version INTEGER NOT NULL DEFAULT 0;"))
             conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS is_verified BOOLEAN DEFAULT FALSE;"))
+            conn.execute(text("ALTER TABLE expenses ADD COLUMN IF NOT EXISTS category VARCHAR DEFAULT 'Other';"))
+            conn.execute(text("UPDATE expenses SET category = 'Other' WHERE category IS NULL;"))
+            conn.execute(text("ALTER TABLE expenses ALTER COLUMN category SET DEFAULT 'Other';"))
+            conn.execute(text("ALTER TABLE expenses ALTER COLUMN category SET NOT NULL;"))
             conn.commit()
     except Exception as e:
         import logging
         logging.getLogger("app").warning(f"Could not check/add is_verified column: {e}")
+else:
+    with engine.connect() as conn:
+        user_columns = conn.execute(text("PRAGMA table_info(users)")).mappings().all()
+        if not any(column["name"] == "token_version" for column in user_columns):
+            conn.execute(text("ALTER TABLE users ADD COLUMN token_version INTEGER NOT NULL DEFAULT 0"))
+            conn.commit()
 
 app = FastAPI()
 register_exception_handlers(app)
@@ -65,3 +78,4 @@ app.include_router(dashboard_routes.router)
 app.include_router(simplify_routes.router)
 app.include_router(activity_routes.router)
 app.include_router(notification_routes.router)
+app.include_router(analytics_routes.router)

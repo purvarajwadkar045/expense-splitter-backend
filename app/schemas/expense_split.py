@@ -14,3 +14,10 @@ class ExpenseSplitResponse(BaseModel):
 
     model_config=ConfigDict(from_attributes=True) 
 
+
+class ExpenseSplitCreate(BaseModel):
+    user_id: int
+    amount: float
+
+    model_config = ConfigDict(from_attributes=True)
+

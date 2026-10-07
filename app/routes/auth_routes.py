@@ -11,6 +11,7 @@ from app.models.otp import OTP, UserOTP
 from app.utils.otp import generate_otp, get_otp_expiry
 from app.utils.email import send_otp_email
 from app.core.security import hash_password, verify_password
+from app.dependencies.auth import get_current_user
 
 router = APIRouter(
     prefix="/auth",
@@ -57,7 +58,6 @@ def register(
     db.commit()
 
     send_otp_email(user.email, otp)
-    print(f"\n[DEVELOPMENT ONLY] OTP code for {user.email} is: {otp}\n")
 
     return new_user
 
@@ -156,7 +156,6 @@ def resend_otp(
     db.commit()
 
     send_otp_email(request.email, otp)
-    print(f"\n[DEVELOPMENT ONLY] OTP code for {request.email} is: {otp}\n")
 
     return {"message": "Verification code sent successfully"}
 
@@ -170,6 +169,16 @@ def login(
     db: Session = Depends(get_db)
 ):
     return login_user(login_data, db)
+
+
+@router.post("/logout", response_model=MessageResponse)
+def logout(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    current_user.token_version += 1
+    db.commit()
+    return {"message": "Successfully signed out"}
 
 
 @router.post(
@@ -197,7 +206,6 @@ def forgot_password(
     db.commit()
     
     send_otp_email(request.email, otp)
-    print(f"\n[DEVELOPMENT ONLY] Forgot password OTP code for {request.email} is: {otp}\n")
     
     return {"message": "Verification code sent successfully"}
 
@@ -229,4 +237,4 @@ def reset_password(
     db.commit()
     
     return {"message": "Password reset successful"}
-
+

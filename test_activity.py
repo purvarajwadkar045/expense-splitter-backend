@@ -113,6 +113,21 @@ class TestActivityTimeline(unittest.TestCase):
         self.assertEqual(acts[2].activity_type, "EXPENSE_CREATED")
         self.assertEqual(acts[2].message, "Purva added an expense 'Dinner' of ₹1200")
 
+    def test_expense_creation_with_explicit_paid_by_member(self):
+        """Should preserve explicit paid_by when another group member pays for the expense"""
+        group_data = GroupCreate(name="Goa Trip")
+        group = group_service.create_group(group_data, self.user1, self.db)
+        group_service.add_member(group.id, "rahul@example.com", self.user1, self.db)
+
+        exp_data = ExpenseCreate(title="Hotel", amount=2000.0, description="Hotel stay", paid_by=2)
+        expense = expense_service.create_expense(group.id, exp_data, self.user1, self.db)
+
+        self.assertEqual(expense.paid_by, 2)
+
+        history = expense_service.get_group_expenses(group.id, self.user1, self.db)
+        self.assertEqual(len(history), 1)
+        self.assertEqual(history[0]["paid_by"], "Rahul")
+
     def test_expense_update_and_delete_activities(self):
         """Should automatically log EXPENSE_UPDATED and EXPENSE_DELETED activities"""
         # Set up group
